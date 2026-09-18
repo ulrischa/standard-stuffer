@@ -1,0 +1,32 @@
+name: Tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  php:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        php: ['8.2', '8.3', '8.4', '8.5']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, dom, mbstring, tokenizer
+          coverage: none
+      - name: PHP checks
+        run: |
+          php tests/lint.php
+          php tests/run.php
+          php tests/transport.php
+          php tests/deployment.php
+      - name: Local protocol fixtures
+        if: matrix.php == '8.3'
+        run: |
+          python3 -m venv /tmp/stuffer-test-env
+          /tmp/stuffer-test-env/bin/pip install -r tests/requirements.txt
+          /tmp/stuffer-test-env/bin/python tests/protocols.py

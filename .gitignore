@@ -1,0 +1,8 @@
+/config.php
+/var/
+/tests/output/
+*.pem
+*.key
+/known_hosts
+/.env
+/credentials/
