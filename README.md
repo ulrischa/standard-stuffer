@@ -40,7 +40,7 @@ The application has no package dependencies. Development-only testing tools are 
 2. Run `php setup.php` in that directory. Enter a dashboard password of at least 14 characters. The input is visible but is not passed as a shell argument. Only its hash is stored.
 3. Serve **only `public/`** as the document root of a dedicated HTTPS site, such as `https://stuffer.example.de`.
 4. Keep `app/`, `website/`, `config.php`, `var/` and credentials outside the public document root. Give the PHP user read access to `config.php` and write access to `var/`. Adjust ownership if setup ran under another user; do not use blanket `777` permissions.
-5. Open the dashboard, log in, and follow the instructions under **Verbindung**, then **Website & Verifikation**.
+5. Open the dashboard, log in, and follow the instructions under **Connection**, then **Website & verification**.
 
 `setup.php` creates a private `config.php` from `config.example.php`. Review it to configure proxy and deployment. Existing configurations are never overwritten: when upgrading, manually add the new `fetch_proxy` and `deployment` sections from the example. Environment-variable secret lookups remain in the generated file.
 
@@ -64,7 +64,7 @@ Alternatively set the server environment variable `STANDARD_STUFFER_ROOT`. The a
 
 ## Connect your PDS
 
-Under **Verbindung**, enter your handle/DID and a dedicated app password. For Bluesky, the default login service is `https://bsky.social`; the actual PDS endpoint is taken from the login response. For another provider, enter its trusted PDS endpoint. Do not submit credentials to an unrelated server.
+Under **Connection**, enter your handle/DID and a dedicated app password. For Bluesky, the default login service is `https://bsky.social`; the actual PDS endpoint is taken from the login response. For another provider, enter its trusted PDS endpoint. Do not submit credentials to an unrelated server.
 
 The first successful connection binds this dashboard to that account's DID. One installation manages **one account and one publication**. Existing records created by other tools are not automatically imported. OAuth and interactive 2FA login are not implemented.
 
@@ -72,10 +72,10 @@ Access/refresh tokens are kept only in the server-side session. The app password
 
 ## One-time domain verification
 
-1. Under **Website & Verifikation**, create the publication with its base URL, name and description.
+1. Under **Website & verification**, create the publication with its base URL, name and description.
 2. Download the generated `site.standard.publication` text file.
 3. Make its contents available at the **exact endpoint shown in the dashboard**, returning only the publication's AT-URI, without HTML.
-4. Run **Domain-Verifikation prüfen**. This checks the public response and the published PDS record.
+4. Run **Verify domain**. This checks the public response and the published PDS record.
 
 A root publication uses:
 
@@ -94,14 +94,14 @@ Use an appropriate web-server route for the second case if needed. This domain-v
 
 ## Extract and publish articles
 
-1. Configure **Extraktion** for your website structure.
-2. Under **Artikel**, enter the final public HTTPS article URL.
+1. Configure **Extraction** for your website structure.
+2. Under **Articles**, enter the final public HTTPS article URL.
 3. Review the preview, its selector matches and warnings. Supply a publication date if none was found. Save the draft.
-4. Click **Gespeicherten Stand veröffentlichen** to create/update the public PDS record. Unsaved form edits are not published.
+4. Click **Publish saved version** to create/update the public PDS record. Unsaved form edits are not published.
 5. Deploy the mapping as described below, or manually place the generated link in the article's `<head>`.
-6. Run **Artikel-Verifikation prüfen** on the article. A successful file deployment alone does not prove that your HTML serves the correct link.
+6. Run **Verify article** on the article. A successful file deployment alone does not prove that your HTML serves the correct link.
 
-For updates, **Seite neu einlesen** creates a preview first. Review, save and publish. The AT-URI is stable. For deletion, confirm the PDS deletion, redeploy the mapping or remove the manual link, check removal, then close the local entry. PDS deletion cannot guarantee deletion of copies made by third parties.
+For updates, **Reimport page** creates a preview first. Review, save and publish. The AT-URI is stable. For deletion, confirm the PDS deletion, redeploy the mapping or remove the manual link, check removal, then close the local entry. PDS deletion cannot guarantee deletion of copies made by third parties.
 
 There is no automatic polling or background synchronization.
 
@@ -168,7 +168,7 @@ Set `url` to `''` to disable it. Use `https://proxy.example.net:8443` if your pr
 - `origin_ca_file`: optional CA bundle for HTTPS origins, including an organization-approved TLS-inspection CA if required. Use a suitable complete CA bundle. Certificate verification is never disabled.
 - Only HTTP(S) CONNECT proxies are supported; SOCKS and proxy-only DNS resolution are not.
 
-The **Extraktion** screen indicates whether the fetch proxy is configured. Test it by importing a public article or running verification.
+The **Extraction** screen indicates whether the fetch proxy is configured. Test it by importing a public article or running verification.
 
 ## Central article mapping and website integration
 
@@ -251,9 +251,9 @@ This uses **`ftp://` plus mandatory AUTH TLS**, equivalent to explicit FTP over 
 ### 3. Deploy and check
 
 1. In **Deployment**, inspect the destination and current mapping.
-2. Confirm replacing that specific remote JSON file and click **Zuordnungsdatei deployen**.
+2. Confirm replacing that specific remote JSON file and click **Deploy mapping file**.
 3. The app uploads a random temporary sibling, downloads it, verifies SHA-256, renames it into place, downloads the active file and verifies it again.
-4. **Remote-Datei prüfen** compares the remote bytes against the current mapping without writing. It reports a missing file before the first deployment.
+4. **Check remote file** compares the remote bytes against the current mapping without writing. It reports a missing file before the first deployment.
 5. Run article verification to check the actual HTML output. Domain verification remains independent.
 
 The mapping contains only confirmed published associations, not drafts, HTML, credentials or private dashboard metadata. Pending PDS writes/deletions block export/deployment until reconciled. Deleted records disappear from the next deployment. Empty mappings are valid and remove all generated article links.
@@ -262,19 +262,19 @@ Redeploy after a new publication or PDS deletion. Editing a draft does not chang
 
 Interrupted transfers may leave `*.upload-*` files beside the target. They are never read by the helper and can be removed after confirming that no transfer is running. A rename whose response is lost is recovered by checking the active file. If the server cannot replace an existing file by rename, deployment fails rather than deleting the old file first. Atomicity ultimately depends on the server's filesystem/rename implementation.
 
-For a manual deployment, download **Zuordnungsdatei herunterladen**, upload it using the same safe replacement principle, then use **Remote-Datei prüfen** if a transfer connection is configured. Back up the previous mapping before your first migration; reverting the file reverts the emitted links, not the PDS records.
+For a manual deployment, download **Download mapping file**, upload it using the same safe replacement principle, then use **Check remote file** if a transfer connection is configured. Back up the previous mapping before your first migration; reverting the file reverts the emitted links, not the PDS records.
 
 ## Bulk updates and sitemap import
 
-Open **Sammelpflege** in the dashboard:
+Open **Bulk operations** in the dashboard:
 
-- **Alle URLs aktualisieren** fetches every active stored URL with the configured proxy and selectors. It replaces local edits, updates already published PDS records with their stable AT-URIs, and keeps drafts unpublished. A confirmation checkbox describes these changes before starting.
+- **Update all URLs** fetches every active stored URL with the configured proxy and selectors. It replaces local edits, updates already published PDS records with their stable AT-URIs, and keeps drafts unpublished. A confirmation checkbox describes these changes before starting.
 - Only an explicit HTTP **404 or 410** deletes a record (published records on the PDS, drafts locally). Redirects, 403/429/5xx, transport errors and invalid content are reported without deletion. Pending PDS operations are skipped for manual reconciliation. Empty extraction does not erase existing article text.
-- **Aus Sitemap hinzufügen** accepts an HTTPS XML sitemap or sitemap index on the publication host, including gzip. It follows nested indexes, avoids cycles and duplicates, and imports new in-scope URLs as drafts. Existing URLs, including removed records, are skipped. An absent sitemap entry never causes deletion.
+- **Import from sitemap** accepts an HTTPS XML sitemap or sitemap index on the publication host, including gzip. It follows nested indexes, avoids cycles and duplicates, and imports new in-scope URLs as drafts. Existing URLs, including removed records, are skipped. An absent sitemap entry never causes deletion.
 - New pages without publication dates remain editable drafts. Add the date before publishing; sitemap `lastmod` is not used as a publication date. Failed extractions appear in the log.
 - Limits: 100 sitemap files, 10,000 unique article URLs per import, and 8 MB per compressed/decompressed sitemap. Unsupported or oversized files are reported, not silently truncated. Split larger collections into smaller sitemaps.
 
-Click **Automatisch fortsetzen** to process one task per authenticated POST while the page is open. You can pause, close the tab and resume later; without JavaScript, repeatedly click **Nächste URL verarbeiten**. The JSON queue persists progress, results and job IDs; normal revision/CSRF protection also applies to bulk operations. This is not a background daemon or scheduled job. Request duration for a single article still depends on website, cover and PDS response times.
+Click **Continue automatically** to process one task per authenticated POST while the page is open. You can pause, close the tab and resume later; without JavaScript, repeatedly click **Process next URL**. The JSON queue persists progress, results and job IDs; normal revision/CSRF protection also applies to bulk operations. This is not a background daemon or scheduled job. Request duration for a single article still depends on website, cover and PDS response times.
 
 A stopped job keeps completed changes. Reconnect to the PDS if needed, reconcile pending writes in the article editor, then start another update. The dashboard shows the latest 100 results and offers the full JSON log; a new job replaces the previous log. Back up before overwriting manually edited content. After deletions, redeploy the mapping and check link cleanup. Domain verification is unchanged.
 

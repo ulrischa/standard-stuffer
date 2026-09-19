@@ -7,8 +7,8 @@ for (const button of document.querySelectorAll('[data-copy]')) {
         try {
             await navigator.clipboard.writeText(target.textContent);
             const label = button.textContent;
-            button.textContent = 'Kopiert';
-            live_message.textContent = 'In die Zwischenablage kopiert.';
+            button.textContent = 'Copied';
+            live_message.textContent = 'Copied to clipboard.';
             setTimeout(() => { button.textContent = label; }, 1800);
         } catch {
             const range = document.createRange();
@@ -16,7 +16,7 @@ for (const button of document.querySelectorAll('[data-copy]')) {
             const selection = window.getSelection();
             selection.removeAllRanges();
             selection.addRange(range);
-            live_message.textContent = 'Text markiert. Bitte über die Kopierfunktion deines Browsers kopieren.';
+            live_message.textContent = 'Text selected. Use your browser’s copy command.';
         }
     });
 }
@@ -24,12 +24,12 @@ const search = document.getElementById('article-search');
 if (search) search.addEventListener('input', () => {
     let visible = 0;
     for (const row of document.querySelectorAll('[data-article-row]')) {
-        row.hidden = !row.textContent.toLocaleLowerCase('de').includes(search.value.toLocaleLowerCase('de'));
+        row.hidden = !row.textContent.toLocaleLowerCase('en').includes(search.value.toLocaleLowerCase('en'));
         if (!row.hidden) visible++;
     }
     const empty = document.getElementById('no-results');
     if (empty) empty.hidden = visible !== 0;
-    live_message.textContent = `${visible} passende Artikel.`;
+    live_message.textContent = `${visible} matching articles.`;
 });
 for (const textarea of document.querySelectorAll('[data-selector-list]')) {
     const container = document.createElement('div');
@@ -50,12 +50,12 @@ for (const textarea of document.querySelectorAll('[data-selector-list]')) {
         const input = document.createElement('input');
         input.value = value;
         input.setAttribute('list', suggestions.id);
-        input.setAttribute('aria-label', `CSS-Selektor für ${textarea.previousElementSibling.textContent}`);
-        input.placeholder = 'Selektor wählen oder eingeben';
+        input.setAttribute('aria-label', `CSS selector for ${textarea.previousElementSibling.textContent}`);
+        input.placeholder = 'Choose or enter a selector';
         input.maxLength = 300;
         input.addEventListener('input', sync);
         row.append(input);
-        for (const [symbol, label, move] of [['↑', 'Nach oben', -1], ['↓', 'Nach unten', 1], ['×', 'Entfernen', 0]]) {
+        for (const [symbol, label, move] of [['↑', 'Move up', -1], ['↓', 'Move down', 1], ['×', 'Remove', 0]]) {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'secondary';
@@ -66,7 +66,7 @@ for (const textarea of document.querySelectorAll('[data-selector-list]')) {
                 if (move === 1 && row.nextElementSibling) list.insertBefore(row.nextElementSibling, row);
                 if (move === 0) { row.remove(); add_button.focus(); }
                 sync();
-                live_message.textContent = `Selektor: ${label}.`;
+                live_message.textContent = `Selector: ${label}.`;
             });
             row.append(button);
         }
@@ -77,7 +77,7 @@ for (const textarea of document.querySelectorAll('[data-selector-list]')) {
     const add_button = document.createElement('button');
     add_button.type = 'button';
     add_button.className = 'secondary add-selector';
-    add_button.textContent = '+ Selektor hinzufügen';
+    add_button.textContent = '+ Add selector';
     add_button.addEventListener('click', () => add_row().focus());
     const original = textarea.value.split('\n').map(line => line.trim()).filter(Boolean);
     for (const value of original) add_row(value);

@@ -5,26 +5,26 @@ try { $payload = mapping_payload($state); } catch (RuntimeException $e) { $mappi
 $target_error = '';
 try { validate_deployment($settings); } catch (RuntimeException $e) { $target_error = $e->getMessage(); }
 ?>
-<p class="eyebrow">ZENTRALE ZUORDNUNG</p><h1>Einmal einbinden. Zentral aktualisieren.</h1>
-<p class="lead">Eine JSON-Datei verknüpft alle veröffentlichten Artikel mit ihren AT-URIs. Deine Website liest sie bei jedem Seitenaufruf lokal.</p>
-<div class="two-columns"><section class="panel"><h2>Aktuellen Stand übertragen</h2>
+<p class="eyebrow">CENTRAL MAPPING</p><h1>Include once. Update centrally.</h1>
+<p class="lead">One JSON file links all published articles to their AT-URIs. Your website reads it locally on every page request.</p>
+<div class="two-columns"><section class="panel"><h2>Deploy current mapping</h2>
 <?php if ($mapping_error): ?><div class="check warning"><?=h($mapping_error)?></div><?php else: ?>
-<p><strong><?=count((array) json_decode($payload, true)['documents'])?> Zuordnungen</strong> · <?=strlen($payload)?> Bytes</p>
-<p class="status <?=mapping_is_deployed($state, $settings) ? '' : 'warning'?>"><?=mapping_is_deployed($state, $settings) ? 'Aktueller Stand zuletzt remote bestätigt' : 'Deployment erforderlich / noch nicht bestätigt'?></p>
-<dl class="matches"><dt>Protokoll</dt><dd><?=h(($settings['protocol'] ?? '') === 'ftps' ? 'FTP mit explizitem TLS (AUTH TLS)' : 'SFTP')?></dd><dt>Server</dt><dd><?=h($settings['host'] ?? 'Nicht eingerichtet')?>:<?=h($settings['port'] ?? '')?></dd><dt>Remote-Datei</dt><dd><code><?=h($settings['remote_path'] ?? '')?></code></dd></dl>
-<?php if ($target_error): ?><div class="check warning"><?=h($target_error)?><p>Den Abschnitt <code>deployment</code> in der privaten <code>config.php</code> einrichten. Die englische README enthält Beispiele für SFTP und explizites FTPS.</p></div><?php else: ?>
-<?php form_start('deploy_mapping', $state); ?><label class="checkbox"><input type="checkbox" name="confirm" value="yes" required> Die oben angegebene Remote-Datei durch den aktuellen Stand ersetzen.</label><button>Zuordnungsdatei deployen</button></form>
-<div class="actions"><?php action_button('check_deployment', 'Remote-Datei prüfen', $state); ?></div>
+<p><strong><?=count((array) json_decode($payload, true)['documents'])?> mappings</strong> · <?=strlen($payload)?> Bytes</p>
+<p class="status <?=mapping_is_deployed($state, $settings) ? '' : 'warning'?>"><?=mapping_is_deployed($state, $settings) ? 'Current mapping last confirmed remotely' : 'Deployment required / not yet confirmed'?></p>
+<dl class="matches"><dt>Protocol</dt><dd><?=h(($settings['protocol'] ?? '') === 'ftps' ? 'FTP with explicit TLS (AUTH TLS)' : 'SFTP')?></dd><dt>Server</dt><dd><?=h($settings['host'] ?? 'Not configured')?>:<?=h($settings['port'] ?? '')?></dd><dt>Remote file</dt><dd><code><?=h($settings['remote_path'] ?? '')?></code></dd></dl>
+<?php if ($target_error): ?><div class="check warning"><?=h($target_error)?><p>Configure the <code>deployment</code> section in your private <code>config.php</code>. The README includes SFTP and explicit FTPS examples.</p></div><?php else: ?>
+<?php form_start('deploy_mapping', $state); ?><label class="checkbox"><input type="checkbox" name="confirm" value="yes" required> Replace the remote file shown above with the current mapping.</label><button>Deploy mapping file</button></form>
+<div class="actions"><?php action_button('check_deployment', 'Check remote file', $state); ?></div>
 <?php endif ?>
-<div class="actions"><a class="button secondary" href="?page=deployment&download=mapping">Zuordnungsdatei herunterladen</a></div>
-<details><summary>JSON-Zuordnung ansehen</summary><pre><?=h($payload)?></pre></details>
+<div class="actions"><a class="button secondary" href="?page=deployment&download=mapping">Download mapping file</a></div>
+<details><summary>View JSON mapping</summary><pre><?=h($payload)?></pre></details>
 <?php endif ?>
 <?php check_view($state['deployment_check'] ?? null); ?>
-<p class="muted">Temporär hochladen → Inhalt zurücklesen → SHA-256 vergleichen → Datei umbenennen → aktive Datei erneut prüfen. Bestehende Dateien werden nicht vorab gelöscht. Abgebrochene Versuche können temporäre .upload-Dateien hinterlassen.</p>
-</section><section class="panel soft"><h2>Einmal auf der Website einrichten</h2><ol class="steps">
-<li>Die PHP-Hilfsdatei herunterladen und auf deiner Website ablegen, vorzugsweise außerhalb des Webverzeichnisses.<div class="actions"><a class="button secondary" href="?download=website_helper">PHP-Include herunterladen</a></div></li>
-<li>Im gemeinsamen <code>&lt;head&gt;</code> deiner PHP-Seiten die Hilfsdatei einbinden und die Ausgabe aufrufen. Die beiden Dateipfade an deinen Webserver anpassen:<pre id="mapping-snippet"><?=h("<?php\nrequire_once '/absolute/path/standard-stuffer-links.php';\necho standard_stuffer_link(\n    '/absolute/path/standard-stuffer-map.json',\n    " . var_export($publication['record']['url'] ?? 'https://example.de', true) . "\n);\n?>")?></pre><button type="button" class="secondary" data-copy="mapping-snippet">Beispiel kopieren</button></li>
-<li>Das Zielverzeichnis für die JSON-Datei anlegen. Der Deployment-Benutzer braucht Schreib- und Umbenennungsrechte, der PHP-Benutzer deiner Website Leserechte. SFTP-/FTPS-Pfade können wegen einer Server-Chroot von lokalen PHP-Dateipfaden abweichen.</li>
-<li>Deployment konfigurieren und die Zuordnung übertragen. Danach beim Artikel die Verifikation prüfen. Diese Prüfung bestätigt die tatsächlich ausgelieferte HTML-Seite; ein erfolgreiches Datei-Deployment allein genügt nicht.</li>
-<li>Nach jeder neuen Veröffentlichung und PDS-Löschung erneut deployen. Entwurfsänderungen beeinflussen die Zuordnung nicht. Die Domain-Verifikationsdatei bleibt weiterhin einmalig unter „Website & Verifikation“ einzurichten.</li>
-</ol><p>Kein <code>auto_prepend_file</code>. Kein HTTP-Abruf der Zuordnung bei jedem Seitenbesuch. Bei fehlender oder defekter JSON-Datei liefert das Include keinen Link; deine Seite läuft weiter.</p><p>Pro Artikel entweder dieses Include oder einen manuellen Link verwenden, damit keine doppelten bzw. alten Links im HTML-Kopf verbleiben.</p></section></div>
+<p class="muted">Upload temporary file → read it back → compare SHA-256 → rename file → verify active file. Existing files are never deleted before replacement. Interrupted attempts may leave temporary .upload files.</p>
+</section><section class="panel soft"><h2>One-time website setup</h2><ol class="steps">
+<li>Download the PHP helper and place it on your website, preferably outside the document root.<div class="actions"><a class="button secondary" href="?download=website_helper">Download PHP include</a></div></li>
+<li>In the shared <code>&lt;head&gt;</code> of your PHP pages, include the helper and output its result. Adjust both file paths for your web server:<pre id="mapping-snippet"><?=h("<?php\nrequire_once '/absolute/path/standard-stuffer-links.php';\necho standard_stuffer_link(\n    '/absolute/path/standard-stuffer-map.json',\n    " . var_export($publication['record']['url'] ?? 'https://example.de', true) . "\n);\n?>")?></pre><button type="button" class="secondary" data-copy="mapping-snippet">Copy example</button></li>
+<li>Create the destination directory for the JSON file. The deployment user needs write and rename permissions; your website’s PHP user needs read permissions. SFTP/FTPS paths may differ from local PHP paths because of a server chroot.</li>
+<li>Configure deployment and transfer the mapping. Then check article verification. This checks the HTML actually served by your website; a successful file deployment alone is not sufficient.</li>
+<li>Redeploy after each new publication or PDS deletion. Draft edits do not affect the mapping. Set up the domain verification file once under “Website & verification”.</li>
+</ol><p>No <code>auto_prepend_file</code>. No HTTP request for the mapping on each page visit. If the JSON file is missing or invalid, the include emits no link; your page continues to work.</p><p>Use either this include or a manual link for each article to avoid duplicate or outdated links in the HTML head.</p></section></div>

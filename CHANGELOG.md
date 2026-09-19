@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1 – 2026-09-19
+
+- Translate all dashboard controls, instructions, accessibility labels, setup prompts and application messages into English.
+- Display historical application messages in English without changing stored article content.
+- Update README control references while preserving previous deletions.
+
 ## 1.2.0 – 2026-09-19
 
 - Add resumable bulk refresh with PDS updates and deletion only on HTTP 404/410.
@@ -19,13 +25,13 @@
 
 ## 1.0.0 – 2026-09-18
 
-- PHP-/Vanilla-JavaScript-Dashboard für eine Website und einen AT-Protocol-Account.
-- JSON-Verwaltung mit Dateisperren, Revisionen und wiederaufnehmbaren PDS-Operationen.
-- Publication anlegen und aktualisieren; Domain-Verifikationsdatei erzeugen und prüfen.
-- Artikel einlesen, als Entwurf bearbeiten, veröffentlichen, aktualisieren und löschen.
-- Geordnete CSS-Selektorlisten für Titel, Beschreibung, Datum, Coverbild und Text.
-- Tags aus Meta-Keywords; Klartextumwandlung mit lokal erhaltenem HTML-Auszug.
-- Coverbilder als PDS-Blob hochladen.
-- Artikel-Verifikation sowie Entfernung alter Links prüfen.
-- Deutsche Anleitungen direkt bei den nötigen manuellen Schritten.
-- Lokale Anmeldung, JSON-Sicherung und responsive Oberfläche.
+- PHP and vanilla JavaScript dashboard for one website and one AT Protocol account.
+- JSON storage with file locking, revisions and resumable PDS operations.
+- Publication creation and updates, domain verification file generation and checks.
+- Article import, draft editing, publishing, updates and deletion.
+- Ordered CSS selector lists for title, description, date, cover image and text.
+- Tags from meta keywords; plain-text conversion with locally retained HTML excerpts.
+- Cover image upload as PDS blobs.
+- Article verification and old-link removal checks.
+- Contextual instructions for manual setup steps.
+- Local authentication, JSON backups and responsive interface.

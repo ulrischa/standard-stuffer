@@ -1,5 +1,5 @@
 <?php
-// Copy to config.php outside the public document root. Created for Uli.
+// Copy to config.php outside the public document root. Maintainer: Uli.
 return [
     'admin_password_hash' => 'REPLACE_WITH_PASSWORD_HASH',
     'data_dir' => __DIR__ . '/var',

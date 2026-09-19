@@ -1,6 +1,12 @@
-# Test report — standard-stuffer 1.2.0
+# Test report — standard-stuffer 1.2.1
 
 Date: 2026-09-19
+
+## English interface verification (1.2.1)
+
+- All 109 existing PHP checks still pass; 7 additional checks cover historical message translation and idempotence. PHP and JavaScript syntax checks pass.
+- Chromium: all main views display English headings and navigation; document language is `en`. Historical verification text displays in English. Automatic bulk processing, log download and sitemap prepare/stop controls still work. Layout checked at 320/768/1440 px without page overflow; no JavaScript runtime errors.
+- README changes only update existing control references. Previously deleted lines were not restored. Article content and stored JSON are not translated or rewritten.
 
 ## Bulk update verification (1.2.0)
 

@@ -3,11 +3,11 @@
 declare(strict_types=1);
 function mapping_payload(array $state): string {
     $publication = $state['publication'];
-    if (!$publication || !$publication['cid'] || !$publication['published_record']) throw new RuntimeException('Zuerst die Publication erfolgreich veröffentlichen.');
-    if ($publication['pending']) throw new RuntimeException('Vor dem Deployment den offenen Publication-Vorgang abschließen.');
+    if (!$publication || !$publication['cid'] || !$publication['published_record']) throw new RuntimeException('Publish the publication successfully first.');
+    if ($publication['pending']) throw new RuntimeException('Complete the pending publication operation before deploying.');
     $documents = [];
     foreach ($state['documents'] as $item) {
-        if ($item['pending']) throw new RuntimeException('Vor dem Deployment alle offenen PDS-Vorgänge abschließen.');
+        if ($item['pending']) throw new RuntimeException('Complete all pending PDS operations before deploying.');
         if ($item['status'] === 'published' && $item['cid'] && $item['published_record']) {
             $url = $publication['published_record']['url'] . ($item['published_record']['path'] ?? '');
             $documents[$url] = $item['uri'];
@@ -15,7 +15,7 @@ function mapping_payload(array $state): string {
     }
     ksort($documents, SORT_STRING);
     $json = json_encode_safe(['version' => 1, 'publication' => ['url' => $publication['published_record']['url'], 'uri' => $publication['uri']], 'documents' => (object) $documents]) . "\n";
-    if (strlen($json) > 5000000) throw new RuntimeException('Die Zuordnungsdatei überschreitet 5 MB.');
+    if (strlen($json) > 5000000) throw new RuntimeException('The mapping file exceeds 5 MB.');
     return $json;
 }
 function deployment_fingerprint(array $settings): string {

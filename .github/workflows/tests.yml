@@ -24,6 +24,7 @@ jobs:
           php tests/bulk.php
           php tests/transport.php
           php tests/deployment.php
+          php tests/messages.php
       - name: Local protocol fixtures
         if: matrix.php == '8.3'
         run: |

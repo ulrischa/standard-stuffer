@@ -1,26 +1,26 @@
 <?php
-// Verified temporary upload followed by server-side replacement, created for Uli.
+// Verified temporary upload followed by server-side replacement. Maintainer: Uli.
 declare(strict_types=1);
 require_once __DIR__ . '/proxy.php';
 function validate_deployment(array $settings): array {
-    if (!in_array($settings['protocol'] ?? '', ['sftp', 'ftps'], true)) throw new RuntimeException('Deployment-Protokoll in config.php auf sftp oder ftps setzen.');
+    if (!in_array($settings['protocol'] ?? '', ['sftp', 'ftps'], true)) throw new RuntimeException('Set the deployment protocol in config.php to sftp or ftps.');
     $host = $settings['host'] ?? '';
-    if (!is_string($host) || !preg_match('/^[A-Za-z0-9][A-Za-z0-9.-]*$/D', $host)) throw new RuntimeException('Deployment-Host ohne Schema oder Pfad eintragen.');
+    if (!is_string($host) || !preg_match('/^[A-Za-z0-9][A-Za-z0-9.-]*$/D', $host)) throw new RuntimeException('Enter the deployment host without a scheme or path.');
     $port = $settings['port'] ?? ($settings['protocol'] === 'sftp' ? 22 : 21);
-    if (!is_int($port) || $port < 1 || $port > 65535) throw new RuntimeException('Ungültiger Deployment-Port.');
+    if (!is_int($port) || $port < 1 || $port > 65535) throw new RuntimeException('Invalid deployment port.');
     $path = $settings['remote_path'] ?? '';
     // Restrict command paths instead of interpolating arbitrary FTP/SFTP commands.
-    if (!is_string($path) || !preg_match('~^/(?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+\.json$~D', $path) || strlen($path) > 1000 || preg_match('~/(?:\.|\.\.)(?:/|$)~', $path)) throw new RuntimeException('Absoluten Remote-Pfad zu einer JSON-Datei verwenden: nur Buchstaben, Ziffern, /, Punkt, _ und -.');
-    if (!is_string($settings['username'] ?? null) || $settings['username'] === '' || preg_match('/[\r\n\x00]/', $settings['username'])) throw new RuntimeException('Deployment-Benutzer fehlt oder ist ungültig.');
+    if (!is_string($path) || !preg_match('~^/(?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+\.json$~D', $path) || strlen($path) > 1000 || preg_match('~/(?:\.|\.\.)(?:/|$)~', $path)) throw new RuntimeException('Use an absolute remote path to a JSON file: only letters, digits, /, dots, _ and -.');
+    if (!is_string($settings['username'] ?? null) || $settings['username'] === '' || preg_match('/[\r\n\x00]/', $settings['username'])) throw new RuntimeException('Deployment username is missing or invalid.');
     $protocols = curl_version()['protocols'];
-    if (!in_array($settings['protocol'] === 'sftp' ? 'sftp' : 'ftp', $protocols, true)) throw new RuntimeException('Das PHP-cURL dieses Servers unterstützt ' . strtoupper($settings['protocol']) . ' nicht.');
+    if (!in_array($settings['protocol'] === 'sftp' ? 'sftp' : 'ftp', $protocols, true)) throw new RuntimeException('PHP cURL on this server does not support ' . strtoupper($settings['protocol']) . '.');
     if ($settings['protocol'] === 'sftp') {
-        if (!defined('CURLOPT_SSH_KNOWNHOSTS')) throw new RuntimeException('cURL unterstützt keine SFTP-Hostkey-Prüfung.');
+        if (!defined('CURLOPT_SSH_KNOWNHOSTS')) throw new RuntimeException('cURL does not support SFTP host key verification.');
         readable_config_file((string) ($settings['known_hosts'] ?? ''));
         if (!empty($settings['private_key'])) readable_config_file($settings['private_key']);
-        elseif (($settings['password'] ?? '') === '') throw new RuntimeException('SFTP benötigt einen privaten Schlüssel oder ein Passwort.');
+        elseif (($settings['password'] ?? '') === '') throw new RuntimeException('SFTP requires a private key or a password.');
         if (!empty($settings['public_key'])) readable_config_file($settings['public_key']);
-    } elseif (($settings['password'] ?? '') === '') throw new RuntimeException('FTPS benötigt ein Passwort.');
+    } elseif (($settings['password'] ?? '') === '') throw new RuntimeException('FTPS requires a password.');
     if (!empty($settings['ca_file'])) readable_config_file($settings['ca_file']);
     $settings['port'] = $port;
     return $settings;
@@ -67,7 +67,7 @@ function deployment_transfer(array $settings, string $operation, string $path, s
     try {
         if ($operation === 'upload') {
             $stream = fopen('php://temp', 'w+b');
-            if (!$stream || fwrite($stream, $payload) !== strlen($payload)) throw new RuntimeException('Deployment-Puffer konnte nicht erstellt werden.');
+            if (!$stream || fwrite($stream, $payload) !== strlen($payload)) throw new RuntimeException('Could not create the deployment buffer.');
             rewind($stream); $options[CURLOPT_UPLOAD] = true; $options[CURLOPT_INFILE] = $stream; $options[CURLOPT_INFILESIZE] = strlen($payload);
         } elseif ($operation === 'rename') {
             // Rename is deliberately not emulated by deleting the existing active file.
@@ -77,8 +77,8 @@ function deployment_transfer(array $settings, string $operation, string $path, s
             curl_setopt($handle, CURLOPT_URL, deployment_url($settings, (string) $destination));
             $options[CURLOPT_NOBODY] = true;
         }
-        if (!curl_setopt_array($handle, $options)) throw new RuntimeException('Deployment-Optionen werden von PHP-cURL nicht unterstützt.');
-        if (curl_exec($handle) === false) throw new RuntimeException('Deployment fehlgeschlagen (cURL ' . curl_errno($handle) . '). Zugangsdaten, Hostkey/Zertifikat, Remote-Pfad und Serverrechte prüfen.');
+        if (!curl_setopt_array($handle, $options)) throw new RuntimeException('PHP cURL does not support the deployment options.');
+        if (curl_exec($handle) === false) throw new RuntimeException('Deployment failed (cURL ' . curl_errno($handle) . '). Check credentials, host key/certificate, remote path and server permissions.');
         return $response;
     } finally { curl_close($handle); if (is_resource($stream)) fclose($stream); }
 }
@@ -89,7 +89,7 @@ function deploy_mapping(array $settings, string $payload, ?callable $transfer = 
     $temp_path = $path . '.upload-' . bin2hex(random_bytes(8));
     $transfer($settings, 'upload', $temp_path, $payload);
     $uploaded = $transfer($settings, 'read', $temp_path);
-    if (!hash_equals($sha, hash('sha256', $uploaded))) throw new RuntimeException('Remote-Prüfsumme der temporären Datei stimmt nicht. Die aktive Datei wurde nicht verändert.');
+    if (!hash_equals($sha, hash('sha256', $uploaded))) throw new RuntimeException('The temporary remote file checksum does not match. The active file was not changed.');
     try { $transfer($settings, 'rename', $temp_path, '', $path); }
     catch (RuntimeException $e) {
         // A server may have renamed successfully before its reply was lost.
@@ -98,6 +98,6 @@ function deploy_mapping(array $settings, string $payload, ?callable $transfer = 
         if (!hash_equals($sha, hash('sha256', $active))) throw $e;
     }
     $active = $transfer($settings, 'read', $path);
-    if (!hash_equals($sha, hash('sha256', $active))) throw new RuntimeException('Aktive Remote-Datei konnte nicht bestätigt werden. Deployment erneut prüfen.');
+    if (!hash_equals($sha, hash('sha256', $active))) throw new RuntimeException('Could not verify the active remote file. Check deployment again.');
     return ['sha256' => $sha, 'at' => now_iso(), 'target' => deployment_fingerprint($settings), 'bytes' => strlen($payload)];
 }

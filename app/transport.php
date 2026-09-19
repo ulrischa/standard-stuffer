@@ -10,8 +10,8 @@ function http_request(string $url, string $method = 'GET', ?string $body = null,
     global $config;
     $parts = https_url($url); $host = strtolower($parts['host']);
     $ips = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : gethostbynamel($host);
-    if (!$ips) throw new RuntimeException('Die Domain kann nicht aufgelöst werden (öffentliche IPv4-Adresse erforderlich).');
-    foreach ($ips as $ip) if (!public_ip($ip)) throw new RuntimeException('Abrufe privater oder reservierter IP-Adressen sind gesperrt.');
+    if (!$ips) throw new RuntimeException('Cannot resolve the domain (a public IPv4 address is required).');
+    foreach ($ips as $ip) if (!public_ip($ip)) throw new RuntimeException('Requests to private or reserved IP addresses are blocked.');
     $proxy_settings = $use_proxy ? ($config['fetch_proxy'] ?? []) : [];
     $proxy_options = proxy_options($proxy_settings, $host, $ips[0]);
     $handle = curl_init($url); $result = ''; $too_large = false; $location = '';
@@ -31,17 +31,17 @@ function http_request(string $url, string $method = 'GET', ?string $body = null,
             return strlen($line);
         }
     ]);
-    if (!curl_setopt_array($handle, $proxy_options)) { curl_close($handle); throw new RuntimeException('Proxy-Optionen konnten nicht aktiviert werden.'); }
+    if (!curl_setopt_array($handle, $proxy_options)) { curl_close($handle); throw new RuntimeException('Could not enable proxy options.'); }
     if ($body !== null) curl_setopt($handle, CURLOPT_POSTFIELDS, $body);
     $ok = curl_exec($handle); $code = (int) curl_getinfo($handle, CURLINFO_HTTP_CODE); $type = (string) curl_getinfo($handle, CURLINFO_CONTENT_TYPE); curl_close($handle);
-    if ($too_large) throw new RuntimeException('Antwort überschreitet das Größenlimit von ' . $limit . ' Bytes.');
-    if ($ok === false) throw new RuntimeException('HTTPS-Abruf fehlgeschlagen (Verbindung, Zertifikat oder Zeitlimit).');
-    if ($code >= 300 && $code < 400) throw new RuntimeException('HTTP-Weiterleitung (' . $code . '). Bitte die endgültige HTTPS-Adresse verwenden; Weiterleitungen werden nicht automatisch verfolgt.' . ($location ? ' Ziel: ' . mb_substr($location, 0, 300) : ''));
+    if ($too_large) throw new RuntimeException('Response exceeds the size limit of ' . $limit . ' bytes.');
+    if ($ok === false) throw new RuntimeException('HTTPS request failed (connection, certificate or timeout).');
+    if ($code >= 300 && $code < 400) throw new RuntimeException('HTTP redirect (' . $code . '). Use the final HTTPS URL; redirects are not followed automatically.' . ($location ? ' Destination: ' . mb_substr($location, 0, 300) : ''));
     return ['status' => $code, 'body' => $result, 'type' => $type];
 }
 function fetch_html(string $url): string {
     $response = http_request($url, 'GET', null, [], 4000000, true);
-    if ($response['status'] !== 200) throw new RuntimeException('Webseite antwortet mit HTTP ' . $response['status'] . '.');
-    if (stripos($response['type'], 'text/html') !== 0 && stripos($response['type'], 'application/xhtml+xml') !== 0) throw new RuntimeException('Die URL liefert kein HTML.');
+    if ($response['status'] !== 200) throw new RuntimeException('Page returned HTTP ' . $response['status'] . '.');
+    if (stripos($response['type'], 'text/html') !== 0 && stripos($response['type'], 'application/xhtml+xml') !== 0) throw new RuntimeException('The URL does not return HTML.');
     return $response['body'];
 }

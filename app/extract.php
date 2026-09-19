@@ -17,14 +17,14 @@ function xpath_literal(string $value): string {
 }
 function css_xpath(string $selector): string {
     $selector = trim($selector);
-    if ($selector === '' || strlen($selector) > 300) throw new RuntimeException('Leerer oder zu langer CSS-Selektor.');
+    if ($selector === '' || strlen($selector) > 300) throw new RuntimeException('Empty or oversized CSS selector.');
     $xpath = '//'; $need_compound = true;
     while ($selector !== '') {
         if (!$need_compound) {
-            if (!preg_match('/^\s*(>)\s*|^\s+/', $selector, $match)) throw new RuntimeException('Nicht unterstützter CSS-Selektor. Erlaubt: Element, .klasse, #id, [Attribut], [Attribut="Wert"], Leerzeichen und >.');
+            if (!preg_match('/^\s*(>)\s*|^\s+/', $selector, $match)) throw new RuntimeException('Unsupported CSS selector. Allowed: element, .class, #id, [attribute], [attribute="value"], spaces and >.');
             $xpath .= strpos($match[0], '>') !== false ? '/' : '//';
             $selector = substr($selector, strlen($match[0])); $need_compound = true;
-            if ($selector === '') throw new RuntimeException('Unvollständiger CSS-Selektor.');
+            if ($selector === '') throw new RuntimeException('Incomplete CSS selector.');
         }
         $tag = '*'; $consumed = false;
         if (preg_match('/^(\*|[a-zA-Z][a-zA-Z0-9_-]*)/', $selector, $match)) { $tag = strtolower($match[1]); $selector = substr($selector, strlen($match[0])); $consumed = true; }
@@ -38,7 +38,7 @@ function css_xpath(string $selector): string {
             } else break;
             $selector = substr($selector, strlen($match[0])); $consumed = true;
         }
-        if (!$consumed) throw new RuntimeException('Nicht unterstützter CSS-Selektor. Keine Pseudoklassen, Gruppen oder CSS-Escapes verwenden.');
+        if (!$consumed) throw new RuntimeException('Unsupported CSS selector. Do not use pseudo-classes, groups or CSS escapes.');
         $xpath .= $tag . ($predicates ? '[' . implode(' and ', $predicates) . ']' : ''); $need_compound = false;
     }
     return $xpath;
@@ -98,9 +98,9 @@ function extract_with_selectors(string $html, string $url, array $selectors): ar
     $keywords = xpath_text($xpath, '//meta[translate(@name,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="keywords"]/@content');
     $out['tags'] = implode(', ', array_values(array_unique(array_filter(array_map('trim', explode(',', $keywords))))));
     $out['canonical'] = xpath_text($xpath, '//link[@rel="canonical"]/@href');
-    if ($out['canonical'] !== '' && $out['canonical'] !== $url) $out['warnings'][] = 'Die Seite nennt eine abweichende Canonical-URL: ' . $out['canonical'] . '. Bitte vor der Veröffentlichung prüfen; es wird nichts automatisch umgebogen.';
-    if ($out['publishedAt'] === '') $out['warnings'][] = 'Kein gültiges Datum gefunden. Bitte Veröffentlichungsdatum ergänzen (YYYY-MM-DD oder ISO-Datum mit Zeitzone).';
-    if ($out['textContent'] === '') $out['warnings'][] = 'Kein Text gefunden. Selektoren prüfen oder Text ergänzen; JavaScript wird nicht ausgeführt.';
-    if (($out['matches']['textContent'] ?? '') === 'body') $out['warnings'][] = 'Text stammt aus body. Bitte auf Navigation und sonstige Nebentexte prüfen.';
+    if ($out['canonical'] !== '' && $out['canonical'] !== $url) $out['warnings'][] = 'The page specifies a different canonical URL: ' . $out['canonical'] . '. Review it before publishing; URLs are not changed automatically.';
+    if ($out['publishedAt'] === '') $out['warnings'][] = 'No valid date found. Add the publication date (YYYY-MM-DD or ISO date with a time zone).';
+    if ($out['textContent'] === '') $out['warnings'][] = 'No text found. Check the selectors or add text; JavaScript is not executed.';
+    if (($out['matches']['textContent'] ?? '') === 'body') $out['warnings'][] = 'Text was extracted from body. Check for navigation and other unrelated content.';
     return $out;
 }
