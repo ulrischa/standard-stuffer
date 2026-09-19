@@ -325,4 +325,3 @@ The PHP suites do not contact an external PDS or publish content. Tests cover ex
 - [cURL mandatory FTP TLS](https://curl.se/libcurl/c/CURLOPT_USE_SSL.html)
 - [cURL SSH known-host verification](https://curl.se/libcurl/c/CURLOPT_SSH_KNOWNHOSTS.html)
 
-Version 1.1.0 · Created for Uli.
