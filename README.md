@@ -2,7 +2,7 @@
 
 Publish selected pages of an existing website to [Standard.site](https://standard.site/docs/introduction/) through an AT Protocol Personal Data Server (PDS).
 
-**PHP + vanilla JavaScript. JSON storage. No database, Composer, build step, background service or `auto_prepend_file`.** The dashboard interface is German; this guide is English. Created for Uli.
+**PHP + vanilla JavaScript. JSON storage. No database, Composer, build step, background service or `auto_prepend_file`.**
 
 ## Features
 
