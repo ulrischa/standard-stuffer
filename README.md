@@ -2,8 +2,6 @@
 
 Publish selected pages of an existing website to [Standard.site](https://standard.site/docs/introduction/) through an AT Protocol Personal Data Server (PDS).
 
-**PHP + vanilla JavaScript. JSON storage. No database, Composer, build step, background service or `auto_prepend_file`.**
-
 ## Features
 
 - Create/update your publication; download and check its domain-verification file.
