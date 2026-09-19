@@ -128,13 +128,15 @@ function has_document_link(string $html, string $uri): bool {
     }
     return false;
 }
-function document_record(array $input, array $publication): array {
+function document_record(array $input, array $publication, bool $allow_missing_date = false): array {
     $title = limited_text(input_string($input, 'title'), 'Titel', 5000, 500, true);
     $description = limited_text(input_string($input, 'description', 30000), 'Beschreibung', 30000, 3000);
     $tags = array_values(array_unique(array_filter(array_map('trim', explode(',', input_string($input, 'tags', 20000))))));
     foreach ($tags as $tag) limited_text($tag, 'Tag', 1280, 128);
     $url = input_string($input, 'url', 2048);
-    $record = ['$type' => 'site.standard.document', 'site' => $publication['uri'], 'path' => document_path($url, $publication['record']['url']), 'title' => $title, 'publishedAt' => iso_date(input_string($input, 'publishedAt'))];
+    $record = ['$type' => 'site.standard.document', 'site' => $publication['uri'], 'path' => document_path($url, $publication['record']['url']), 'title' => $title];
+    $date = input_string($input, 'publishedAt');
+    if ($date !== '' || !$allow_missing_date) $record['publishedAt'] = iso_date($date);
     if ($description !== '') $record['description'] = $description;
     if ($tags) $record['tags'] = $tags;
     $text = input_string($input, 'textContent', 800000);

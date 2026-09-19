@@ -99,3 +99,24 @@ window.addEventListener('pageshow', () => {
     for (const button of document.querySelectorAll('button:disabled')) button.disabled = false;
     for (const form of document.forms) form.removeAttribute('aria-busy');
 });
+
+// Keep automatic processing opt-in per tab; all mutations remain CSRF-protected POSTs.
+const bulk_runner = document.querySelector('[data-bulk-run]');
+if (bulk_runner) {
+    const bulk_key = 'standard-stuffer-bulk';
+    const job_id = bulk_runner.dataset.bulkRun;
+    let timer;
+    const schedule = () => {
+        timer = setTimeout(() => {
+            if (document.querySelector('[role="alert"]')) { sessionStorage.removeItem(bulk_key); return; }
+            bulk_runner.form.requestSubmit();
+        }, 700);
+    };
+    bulk_runner.addEventListener('click', () => { sessionStorage.setItem(bulk_key, job_id); clearTimeout(timer); schedule(); });
+    document.querySelector('[data-bulk-pause]').addEventListener('click', () => { clearTimeout(timer); sessionStorage.removeItem(bulk_key); });
+    for (const form of document.forms) form.addEventListener('submit', () => {
+        clearTimeout(timer);
+        if (form !== bulk_runner.form) sessionStorage.removeItem(bulk_key);
+    });
+    if (sessionStorage.getItem(bulk_key) === job_id) schedule();
+}

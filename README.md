@@ -266,11 +266,27 @@ Interrupted transfers may leave `*.upload-*` files beside the target. They are n
 
 For a manual deployment, download **Zuordnungsdatei herunterladen**, upload it using the same safe replacement principle, then use **Remote-Datei prüfen** if a transfer connection is configured. Back up the previous mapping before your first migration; reverting the file reverts the emitted links, not the PDS records.
 
+## Bulk updates and sitemap import
+
+Open **Sammelpflege** in the dashboard:
+
+- **Alle URLs aktualisieren** fetches every active stored URL with the configured proxy and selectors. It replaces local edits, updates already published PDS records with their stable AT-URIs, and keeps drafts unpublished. A confirmation checkbox describes these changes before starting.
+- Only an explicit HTTP **404 or 410** deletes a record (published records on the PDS, drafts locally). Redirects, 403/429/5xx, transport errors and invalid content are reported without deletion. Pending PDS operations are skipped for manual reconciliation. Empty extraction does not erase existing article text.
+- **Aus Sitemap hinzufügen** accepts an HTTPS XML sitemap or sitemap index on the publication host, including gzip. It follows nested indexes, avoids cycles and duplicates, and imports new in-scope URLs as drafts. Existing URLs, including removed records, are skipped. An absent sitemap entry never causes deletion.
+- New pages without publication dates remain editable drafts. Add the date before publishing; sitemap `lastmod` is not used as a publication date. Failed extractions appear in the log.
+- Limits: 100 sitemap files, 10,000 unique article URLs per import, and 8 MB per compressed/decompressed sitemap. Unsupported or oversized files are reported, not silently truncated. Split larger collections into smaller sitemaps.
+
+Click **Automatisch fortsetzen** to process one task per authenticated POST while the page is open. You can pause, close the tab and resume later; without JavaScript, repeatedly click **Nächste URL verarbeiten**. The JSON queue persists progress, results and job IDs; normal revision/CSRF protection also applies to bulk operations. This is not a background daemon or scheduled job. Request duration for a single article still depends on website, cover and PDS response times.
+
+A stopped job keeps completed changes. Reconnect to the PDS if needed, reconcile pending writes in the article editor, then start another update. The dashboard shows the latest 100 results and offers the full JSON log; a new job replaces the previous log. Back up before overwriting manually edited content. After deletions, redeploy the mapping and check link cleanup. Domain verification is unchanged.
+
+The importer follows the [Sitemaps XML structure](https://www.sitemaps.org/protocol.html), with the narrower limits above for JSON-based hosting.
+
 ## Verification behavior
 
 - Domain verification compares the trimmed public response with the exact publication AT-URI, then checks the PDS record.
 - Article verification checks an exact link in the HTML **head**, then checks the PDS record.
-- Deleted-article cleanup checks that the old link is gone; the original page must still return HTTP 200.
+- Deleted-article cleanup checks that the old link is gone; HTTP 404/410 also confirms that the original page is gone.
 - Checks are timestamped snapshots. A PDS connection is needed for remote record confirmation.
 - Redirects are not followed automatically. Enter the final HTTPS URL and expose verification endpoints directly.
 
@@ -298,7 +314,7 @@ HTTPS, CSRF protection, output escaping, CSP, secure session cookies, size/time 
 
 ```sh
 php tests/lint.php
-php tests/run.php
+php tests/bulk.php # includes the core suite
 php tests/transport.php
 php tests/deployment.php
 ```

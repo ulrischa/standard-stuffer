@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 – 2026-09-19
+
+- Add resumable bulk refresh with PDS updates and deletion only on HTTP 404/410.
+- Import XML/gzip sitemaps and nested indexes as drafts, with deduplication and scope checks.
+- Add progress, pause/resume, full result logs and contextual instructions.
+- Keep undated imports editable and prevent publication until a date is supplied.
+- Allow cleanup confirmation for removed pages returning HTTP 404/410.
+
 ## 1.1.0 – 2026-09-18
 
 - Add explicit HTTP(S) CONNECT proxy configuration for page, cover and verification fetches.

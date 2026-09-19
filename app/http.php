@@ -85,6 +85,10 @@ function verify_item(array $item, bool $publication, array $state): array {
             $match = $response['status'] === 200 && trim($response['body']) === $item['uri'];
             $checked['message'] = $match ? 'Domain-Rückverweis stimmt überein.' : 'HTTP ' . $response['status'] . ': Die Antwort muss ausschließlich die Publication-AT-URI enthalten.';
         } else {
+            if ($item['status'] === 'removed') {
+                $response = http_request($item['url'], 'GET', null, [], 4000000, true);
+                if (in_array($response['status'], [404, 410], true)) return ['at' => now_iso(), 'ok' => true, 'message' => 'Die Originalseite liefert HTTP ' . $response['status'] . '; kein aktiver Artikel-Link mehr erreichbar. Zentrale Zuordnung gegebenenfalls neu deployen.'];
+            }
             $html = fetch_html($item['url']); $match = has_document_link($html, $item['uri']);
             if ($item['status'] === 'removed') {
                 $checked['ok'] = !$match;

@@ -6,6 +6,7 @@ require_once __DIR__ . '/http.php';
 require_once __DIR__ . '/extract.php';
 require_once __DIR__ . '/mapping.php';
 require_once __DIR__ . '/deployment.php';
+require_once __DIR__ . '/bulk.php';
 ini_set('display_errors', '0');
 header('Content-Type: text/html; charset=UTF-8');
 header("Content-Security-Policy: default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");

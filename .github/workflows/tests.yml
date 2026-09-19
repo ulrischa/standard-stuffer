@@ -21,7 +21,7 @@ jobs:
       - name: PHP checks
         run: |
           php tests/lint.php
-          php tests/run.php
+          php tests/bulk.php
           php tests/transport.php
           php tests/deployment.php
       - name: Local protocol fixtures

@@ -1,5 +1,5 @@
 <?php
-// Front controller for standard-stuffer, created for Uli.
+// Front controller for standard-stuffer. Maintainer: Uli.
 declare(strict_types=1);
 $private_root = getenv('STANDARD_STUFFER_ROOT') ?: dirname(__DIR__);
 require $private_root . '/app/bootstrap.php';
@@ -35,6 +35,9 @@ if (!$setup_error) {
     if (!empty($_SESSION['admin'])) {
         try { $state = read_state(); $state_valid = true; } catch (Throwable $e) { $state_valid = false; $error = 'JSON-Datenspeicher konnte nicht gelesen werden. Bitte die gesicherte dashboard.json wiederherstellen.'; }
         $download = $state_valid ? ($_GET['download'] ?? '') : '';
+        if ($download === 'bulk_log') {
+            header('Content-Type: application/json; charset=UTF-8'); header('Content-Disposition: attachment; filename="standard-stuffer-bulk-log.json"'); echo json_encode_safe($state['bulk']['log'] ?? []); exit;
+        }
         if ($download === 'mapping') {
             try { $mapping_json = mapping_payload($state); header('Content-Type: application/json; charset=UTF-8'); header('Content-Disposition: attachment; filename="standard-stuffer-map.json"'); echo $mapping_json; exit; }
             catch (RuntimeException $e) { $error = $e->getMessage(); }
@@ -81,7 +84,7 @@ $publication = $state['publication'];
 <?php elseif (empty($_SESSION['admin'])): ?>
 <main id="main" class="standalone login"><p class="eyebrow">DEIN PUBLISHING-WERKZEUG</p><h1>Inhalte verbinden.<br>Kontrolle behalten.</h1><p class="lead">Ausgewählte Webseiten veröffentlichen, aktualisieren und verifizieren.</p><section class="panel"><h2>Dashboard öffnen</h2><?php if ($error): ?><p class="check warning" role="alert"><?=h($error)?></p><?php endif ?><?php form_start('login', $state); field('password', 'Dashboard-Passwort', '', 'password', true); ?><button>Anmelden</button></form><p class="muted">Das lokale Dashboard-Passwort ist unabhängig von deinem AT-Protocol-Konto.</p></section></main>
 <?php else: ?>
-<div class="layout"><aside class="sidebar"><nav aria-label="Hauptnavigation"><?php foreach (['articles' => 'Artikel', 'publication' => 'Website & Verifikation', 'selectors' => 'Extraktion', 'deployment' => 'Deployment', 'connection' => 'Verbindung', 'help' => 'Anleitung'] as $nav_page => $nav_label): ?><a href="?page=<?=h($nav_page)?>" <?=($page === $nav_page || ($page === 'editor' && $nav_page === 'articles')) ? 'aria-current="page"' : ''?>><?=h($nav_label)?></a><?php endforeach ?></nav><div class="sidebar-bottom"><p class="connection-dot"><?=!empty($_SESSION['pds']) ? 'PDS verbunden' : 'PDS nicht verbunden'?></p><small><?=h($_SESSION['pds']['handle'] ?? 'Verbindung zum Veröffentlichen nötig')?></small><?php action_button('logout', 'Abmelden', $state); ?></div></aside>
+<div class="layout"><aside class="sidebar"><nav aria-label="Hauptnavigation"><?php foreach (['articles' => 'Artikel', 'publication' => 'Website & Verifikation', 'selectors' => 'Extraktion', 'bulk' => 'Sammelpflege', 'deployment' => 'Deployment', 'connection' => 'Verbindung', 'help' => 'Anleitung'] as $nav_page => $nav_label): ?><a href="?page=<?=h($nav_page)?>" <?=($page === $nav_page || ($page === 'editor' && $nav_page === 'articles')) ? 'aria-current="page"' : ''?>><?=h($nav_label)?></a><?php endforeach ?></nav><div class="sidebar-bottom"><p class="connection-dot"><?=!empty($_SESSION['pds']) ? 'PDS verbunden' : 'PDS nicht verbunden'?></p><small><?=h($_SESSION['pds']['handle'] ?? 'Verbindung zum Veröffentlichen nötig')?></small><?php action_button('logout', 'Abmelden', $state); ?></div></aside>
 <main id="main" class="content">
 <?php if ($error): ?><div class="check warning" role="alert"><?=h($error)?></div><?php endif ?>
 <?php if ($notice): ?><div class="notice" role="status"><?=h($notice)?></div><?php endif ?>
@@ -94,6 +97,8 @@ $publication = $state['publication'];
 <section class="panel soft"><h2>Domain bestätigen</h2><?php if (!$publication): ?><p>Zuerst die Publication anlegen. Anschließend erscheinen hier die genaue Zieladresse und der Dateiinhalt.</p><?php else: ?>
 <ol class="steps"><li>Unter dieser Adresse muss deine Website eine einfache Textantwort ausliefern:<code class="block"><?=h(verification_url($publication['record']['url']))?></code></li><li>Die Antwort enthält nur diese AT-URI, ohne HTML:<code class="block" id="publication-uri"><?=h($publication['uri'])?></code><div class="actions"><button class="secondary" type="button" data-copy="publication-uri">URI kopieren</button><a class="button secondary" href="?download=verification">Datei herunterladen</a></div></li><li>Die Datei im Ordner <code>.well-known</code> deiner Website ablegen. Für eine Publication in einem Unterverzeichnis muss die oben angezeigte Pfad-Erweiterung ebenfalls umgesetzt werden; dafür ggf. eine Serverroute verwenden.</li><li>Wenn die URL erreichbar ist, Prüfung starten. Die Datei bleibt dauerhaft bestehen.</li></ol>
 <?php action_button('verify_publication', 'Domain-Verifikation prüfen', $state, '', 'primary'); check_view($publication['check']); endif ?></section></div>
+<?php elseif ($page === 'bulk'): ?>
+<?php require $private_root . '/app/bulk-view.php'; ?>
 <?php elseif ($page === 'deployment'): ?>
 <?php require $private_root . '/app/deployment-view.php'; ?>
 <?php elseif ($page === 'selectors'): ?>
@@ -133,9 +138,9 @@ if ($error && ($_POST['action'] ?? '') === 'save_document' && $values) foreach (
 <?php if (!$publication || !$publication['cid']): ?><section class="panel soft"><h2>Starte mit deiner Website</h2><p>Verbinde zuerst deinen PDS und lege die Publication an. Danach kannst du Artikel hinzufügen.</p><div class="actions"><a class="button" href="?page=connection">1. Account verbinden</a><a class="button secondary" href="?page=publication">2. Website einrichten</a></div></section><?php else: ?>
 <?php if (!mapping_is_deployed($state, $config['deployment'] ?? [])): ?><p class="check neutral">Zentrale Einbindung verwendet? <a href="?page=deployment">Aktuelle Zuordnung deployen</a>. Bei ausschließlich manuellen Links ist dieser Schritt nicht nötig.</p><?php endif ?>
 <?php if (!($publication['check']['ok'] ?? false)): ?><div class="check warning">Die Domain ist noch nicht erfolgreich geprüft. <a href="?page=publication">Domain-Verifikation abschließen</a>.</div><?php endif ?>
-<section class="panel"><h2>Artikel hinzufügen</h2><?php form_start('analyze', $state); ?><div class="import-row"><?php field('url', 'Öffentliche Artikel-URL', '', 'url', true); ?><button>Seite einlesen</button></div></form><p class="muted">Zuerst Vorschau, dann Entwurf. Einlesen veröffentlicht noch nichts.</p></section><?php endif ?>
+<section class="panel"><h2>Artikel hinzufügen</h2><p><a href="?page=bulk">Alle URLs aktualisieren oder Sitemap importieren</a></p><?php form_start('analyze', $state); ?><div class="import-row"><?php field('url', 'Öffentliche Artikel-URL', '', 'url', true); ?><button>Seite einlesen</button></div></form><p class="muted">Zuerst Vorschau, dann Entwurf. Einlesen veröffentlicht noch nichts.</p></section><?php endif ?>
 <section class="panel article-list"><div class="list-heading"><h2>Verwaltete Seiten</h2><label class="search-label">Filtern <input type="search" id="article-search" placeholder="Titel oder URL"></label></div>
 <?php if (!$state['documents']): ?><div class="empty"><span aria-hidden="true">↗</span><h3>Platz für deinen ersten Artikel.</h3><p>Nach der Website-Einrichtung oben eine URL eintragen.</p></div><?php else: ?><div class="table-wrap"><table><thead><tr><th scope="col">Artikel</th><th scope="col">Veröffentlichung</th><th scope="col">Verifikation</th><th scope="col">Aktion</th></tr></thead><tbody><?php foreach (array_reverse($state['documents'], true) as $doc_id => $doc): ?><tr data-article-row><td><strong><?=h($doc['record']['title'])?></strong><small class="url"><?=h($doc['url'])?></small></td><td><span class="status <?= $doc['pending'] || $doc['status'] === 'removed' ? 'warning' : '' ?>"><?=h($doc['pending'] ? 'Vorgang offen' : ($doc['status'] === 'removed' ? 'Link entfernen' : ($doc['cid'] ? ($doc['record'] != $doc['published_record'] ? 'Änderungen offen' : 'Veröffentlicht') : 'Entwurf')))?></span></td><td><?=h($doc['check'] ? ($doc['check']['ok'] ? ($doc['status'] === 'removed' ? 'Link entfernt' : 'Erfolgreich geprüft') : 'Handlung erforderlich') : 'Noch nicht geprüft')?><small><?=h($doc['check']['at'] ?? '')?></small></td><td><a class="button secondary" href="?page=editor&id=<?=h($doc_id)?>">Öffnen<span class="sr-only">: <?=h($doc['record']['title'])?></span></a></td></tr><?php endforeach ?></tbody></table></div><p id="no-results" hidden>Keine passenden Artikel gefunden.</p><?php endif ?></section>
 <?php endif ?>
-<footer class="footer">standard-stuffer · Deine Website im AT Protocol.<span>Version 1.1.0</span></footer>
+<footer class="footer">standard-stuffer · Deine Website im AT Protocol.<span>Version 1.2.0</span></footer>
 </main></div><?php endif ?><div id="live-message" class="sr-only" aria-live="polite"></div></body></html>

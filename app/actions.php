@@ -23,6 +23,17 @@ function handle_action(string $action, array &$state): string {
         state_save($state);
         return $state['deployment_check']['message'];
     }
+    if ($action === 'bulk_start') {
+        if (input_string($_POST, 'confirm', 10) !== 'yes') throw new RuntimeException('Die beschriebenen Sammeländerungen bitte bestätigen.');
+        bulk_start($state, input_string($_POST, 'mode', 20), input_string($_POST, 'sitemap', 2048));
+        return 'Sammellauf vorbereitet. Jetzt Verarbeitung starten.';
+    }
+    if ($action === 'bulk_step') return bulk_step($state, input_string($_POST, 'job_id', 50));
+    if ($action === 'bulk_stop') {
+        if (($state['bulk']['id'] ?? '') !== input_string($_POST, 'job_id', 50)) throw new RuntimeException('Sammellauf wurde inzwischen ersetzt.');
+        $state['bulk']['status'] = 'stopped'; state_save($state);
+        return 'Sammellauf gestoppt. Bereits ausgeführte Änderungen bleiben bestehen.';
+    }
     $id = input_string($_POST, 'id', 100);
     if ($action === 'disconnect') { unset($_SESSION['pds']); return 'Verbindung getrennt. Die Veröffentlichungen bleiben erhalten.'; }
     if ($action === 'connect') {
@@ -109,6 +120,7 @@ function handle_action(string $action, array &$state): string {
         if ($item['status'] === 'removed') throw new RuntimeException('Dieser Datensatz wurde bereits entfernt.');
         if (!$item['pending']) {
             require_account($state);
+            document_record(array_merge($item['record'], ['url' => $item['url'], 'tags' => implode(', ', $item['record']['tags'] ?? [])]), $state['publication']);
             if (!empty($item['cover_url'])) $item['record']['coverImage'] = upload_cover($item['cover_url'], $state);
         }
         sync_item($state, $item, 'put');

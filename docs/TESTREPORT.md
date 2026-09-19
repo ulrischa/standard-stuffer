@@ -1,6 +1,14 @@
-# Test report — standard-stuffer 1.1.0
+# Test report — standard-stuffer 1.2.0
 
-Date: 2026-09-18
+Date: 2026-09-19
+
+## Bulk update verification (1.2.0)
+
+- Native PHP 8.3: 64 core/bulk checks, 33 mapping/deployment checks and 12 transport checks pass (109 total), plus PHP and JavaScript syntax checks.
+- New coverage: sitemap namespaces/gzip/deduplication/cycles/scope, malformed XML and external-entity rejection, undated drafts and publication guard, repeat imports, stable PDS IDs, unchanged records, missing text protection, 301/403/429/500/503 preservation, interrupted writes, pending-operation skip, 404/410 deletion and persisted progress.
+- Chromium against native PHP: automatic queue completion, authenticated full-log download, sitemap job preparation and stopping; 320/768/1440 px without horizontal page overflow; no JavaScript runtime errors. Screenshot visually inspected.
+- PDS responses remain simulated; no production PDS credentials were supplied. The browser queue fixture uses duplicate local entries, so no production URLs are fetched by that test.
+
 
 ## Executed successfully
 
@@ -16,7 +24,7 @@ Date: 2026-09-18
 
 ```sh
 php tests/lint.php
-php tests/run.php
+php tests/bulk.php
 php tests/transport.php
 php tests/deployment.php
 python3 -m venv /tmp/stuffer-tests
